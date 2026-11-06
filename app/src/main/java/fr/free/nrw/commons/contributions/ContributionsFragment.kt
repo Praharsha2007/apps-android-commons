@@ -279,12 +279,20 @@ class ContributionsFragment :
         }
 
         inflater.inflate(R.menu.contribution_activity_notification_menu, menu)
+        setupNotificationMenuItem(menu)
+        setupUploadMenuItem(menu)
+    }
 
-        val notificationsMenuItem = menu.findItem(R.id.notifications)
-        val notification = notificationsMenuItem.actionView
+    private fun setupNotificationMenuItem(menu: Menu) {
+        val notification = menu.findItem(R.id.notifications).actionView
         notificationCount = notification!!.findViewById(R.id.notification_count_badge)
-        val uploadMenuItem = menu.findItem(R.id.upload_tab)
-        val uploadMenuItemActionView = uploadMenuItem.actionView
+        notification.setOnClickListener {
+            context?.let { startYourself(it, "unread") }
+        }
+    }
+
+    private fun setupUploadMenuItem(menu: Menu) {
+        val uploadMenuItemActionView = menu.findItem(R.id.upload_tab).actionView
         pendingUploadsCountTextView =
             uploadMenuItemActionView!!.findViewById(
                 R.id.pending_uploads_count_badge,
@@ -297,8 +305,9 @@ class ContributionsFragment :
             uploadMenuItemActionView.findViewById(
                 R.id.pending_uploads_image_view,
             )
-        if (pendingUploadsImageView != null) {
-            pendingUploadsImageView!!.setOnClickListener { view: View? ->
+
+        val openUploadProgressListener =
+            View.OnClickListener {
                 startActivity(
                     Intent(
                         context,
@@ -306,35 +315,9 @@ class ContributionsFragment :
                     ),
                 )
             }
-        }
-        if (pendingUploadsCountTextView != null) {
-            pendingUploadsCountTextView!!.setOnClickListener { view: View? ->
-                startActivity(
-                    Intent(
-                        context,
-                        UploadProgressActivity::class.java,
-                    ),
-                )
-            }
-        }
-        if (uploadsErrorTextView != null) {
-            uploadsErrorTextView!!.setOnClickListener { view: View? ->
-                startActivity(
-                    Intent(
-                        context,
-                        UploadProgressActivity::class.java,
-                    ),
-                )
-            }
-        }
-        notification.setOnClickListener { view: View? ->
-            context?.let {
-                startYourself(
-                    it,
-                    "unread",
-                )
-            }
-        }
+        pendingUploadsImageView?.setOnClickListener(openUploadProgressListener)
+        pendingUploadsCountTextView?.setOnClickListener(openUploadProgressListener)
+        uploadsErrorTextView?.setOnClickListener(openUploadProgressListener)
     }
 
     @SuppressLint("CheckResult")

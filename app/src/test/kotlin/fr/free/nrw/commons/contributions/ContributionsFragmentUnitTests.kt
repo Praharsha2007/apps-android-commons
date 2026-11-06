@@ -8,6 +8,8 @@ import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
@@ -22,7 +24,9 @@ import fr.free.nrw.commons.kvstore.JsonKvStore
 import fr.free.nrw.commons.media.MediaDetailPagerFragment
 import fr.free.nrw.commons.mwapi.OkHttpJsonApiClient
 import fr.free.nrw.commons.nearby.NearbyNotificationCardView
+import fr.free.nrw.commons.notification.NotificationActivity
 import fr.free.nrw.commons.notification.NotificationController
+import fr.free.nrw.commons.upload.UploadProgressActivity
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import org.junit.Assert
@@ -34,6 +38,7 @@ import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
@@ -144,11 +149,50 @@ class ContributionsFragmentUnitTests {
 
     @Test
     @Throws(Exception::class)
-    fun testOnCreateOptionsMenu() {
+    fun testOnCreateOptionsMenuBindsMenuItems() {
         Shadows.shadowOf(Looper.getMainLooper()).idle()
-        `when`(menu.findItem(anyInt())).thenReturn(menuItem)
-        `when`(menuItem.actionView).thenReturn(notification)
+        val notificationBadge = bindMenuItems()
+
         fragment.onCreateOptionsMenu(menu, menuInflater)
+
+        verify(menuInflater).inflate(R.menu.contribution_activity_notification_menu, menu)
+        Assert.assertSame(notificationBadge, fragment.notificationCount)
+        Assert.assertNotNull(fragment.pendingUploadsCountTextView)
+        Assert.assertNotNull(fragment.uploadsErrorTextView)
+        Assert.assertNotNull(fragment.pendingUploadsImageView)
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testOnCreateOptionsMenuUploadBadgesOpenUploadProgress() {
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        bindMenuItems()
+
+        fragment.onCreateOptionsMenu(menu, menuInflater)
+        fragment.pendingUploadsCountTextView!!.performClick()
+
+        val startedIntent = Shadows.shadowOf(activity).nextStartedActivity
+        Assert.assertEquals(
+            UploadProgressActivity::class.java.name,
+            startedIntent.component?.className,
+        )
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testOnCreateOptionsMenuNotificationBadgeOpensNotifications() {
+        Shadows.shadowOf(Looper.getMainLooper()).idle()
+        val notificationBadge = bindMenuItems()
+
+        fragment.onCreateOptionsMenu(menu, menuInflater)
+        notificationBadge.performClick()
+
+        val startedIntent = Shadows.shadowOf(activity).nextStartedActivity
+        Assert.assertEquals(
+            NotificationActivity::class.java.name,
+            startedIntent.component?.className,
+        )
+        Assert.assertEquals("unread", startedIntent.getStringExtra("title"))
     }
 
     @Test
@@ -358,5 +402,25 @@ class ContributionsFragmentUnitTests {
         Whitebox.setInternalState(fragment, "mediaDetailPagerFragment", mediaDetailPagerFragment)
         `when`(mediaDetailPagerFragment.isVisible).thenReturn(false)
         fragment.showDetail(0, false)
+    }
+
+    private fun bindMenuItems(): TextView {
+        val notificationBadge = TextView(context).apply { id = R.id.notification_count_badge }
+        val notificationMenuItem = mock(MenuItem::class.java)
+        `when`(notificationMenuItem.actionView).thenReturn(notificationBadge)
+        `when`(menu.findItem(R.id.notifications)).thenReturn(notificationMenuItem)
+
+        val uploadMenuItem = mock(MenuItem::class.java)
+        `when`(uploadMenuItem.actionView).thenReturn(createUploadActionView())
+        `when`(menu.findItem(R.id.upload_tab)).thenReturn(uploadMenuItem)
+        return notificationBadge
+    }
+
+    private fun createUploadActionView(): View {
+        val container = FrameLayout(context)
+        container.addView(TextView(context).apply { id = R.id.pending_uploads_count_badge })
+        container.addView(TextView(context).apply { id = R.id.uploads_error_count_badge })
+        container.addView(ImageView(context).apply { id = R.id.pending_uploads_image_view })
+        return container
     }
 }
