@@ -66,62 +66,12 @@ class ExploreMapController
             try {
                 explorePlacesInfo.currentLatLng = currentLatLng
                 latestSearchLocation = searchLatLng
-
                 val mediaList = exploreMapCalls.callCommonsQuery(searchLatLng)
-                val boundaryCoordinates =
-                    arrayOf(
-                        mediaList[0].coordinates!!, // south
-                        mediaList[0].coordinates!!, // north
-                        mediaList[0].coordinates!!, // west
-                        mediaList[0].coordinates!!,
-                    ) // east, init with a random location
-
-                Timber.d("Sorting places by distance...")
-                val distances: MutableMap<Media, Double> = HashMap()
-                for (media in mediaList) {
-                    distances[media] = computeDistanceBetween(media.coordinates!!, searchLatLng)
-                    // Find boundaries with basic find max approach
-                    if (media.coordinates!!.latitude
-                        < boundaryCoordinates[0]!!.latitude
-                    ) {
-                        boundaryCoordinates[0] = media.coordinates!!
-                    }
-                    if (media.coordinates!!.latitude
-                        > boundaryCoordinates[1]!!.latitude
-                    ) {
-                        boundaryCoordinates[1] = media.coordinates!!
-                    }
-                    if (media.coordinates!!.longitude
-                        < boundaryCoordinates[2]!!.longitude
-                    ) {
-                        boundaryCoordinates[2] = media.coordinates!!
-                    }
-                    if (media.coordinates!!.longitude
-                        > boundaryCoordinates[3]!!.longitude
-                    ) {
-                        boundaryCoordinates[3] = media.coordinates!!
-                    }
-                }
+                val boundaryCoordinates = calculateBoundaryCoordinates(mediaList, searchLatLng)
                 explorePlacesInfo.mediaList = mediaList
                 explorePlacesInfo.explorePlaceList = mediaToExplorePlace(mediaList)
                 explorePlacesInfo.boundaryCoordinates = boundaryCoordinates
-
-                // Sets latestSearchRadius to maximum distance among boundaries and search location
-                for ((latitude, longitude) in boundaryCoordinates) {
-                    val distance =
-                        calculateDistance(
-                            latitude,
-                            longitude,
-                            searchLatLng.latitude,
-                            searchLatLng.longitude,
-                        )
-                    if (distance > latestSearchRadius) {
-                        latestSearchRadius = distance
-                    }
-                }
-
-                // Our radius searched around us, will be used to understand when user search their own location, we
-                // will follow them
+                updateLatestSearchRadius(boundaryCoordinates, searchLatLng)
                 if (checkingAroundCurrentLocation) {
                     currentLocationSearchRadius = latestSearchRadius
                     currentLocation = currentLatLng
@@ -130,6 +80,57 @@ class ExploreMapController
                 Timber.e(e)
             }
             return explorePlacesInfo
+        }
+
+        private fun calculateBoundaryCoordinates(
+            mediaList: List<Media>,
+            searchLatLng: LatLng,
+        ): Array<LatLng> {
+            val boundaryCoordinates =
+                arrayOf(
+                    mediaList[0].coordinates!!, // south
+                    mediaList[0].coordinates!!, // north
+                    mediaList[0].coordinates!!, // west
+                    mediaList[0].coordinates!!,
+                ) // east, init with a random location
+
+            Timber.d("Sorting places by distance...")
+            val distances: MutableMap<Media, Double> = HashMap()
+            for (media in mediaList) {
+                distances[media] = computeDistanceBetween(media.coordinates!!, searchLatLng)
+                // Find boundaries with basic find max approach
+                if (media.coordinates!!.latitude < boundaryCoordinates[0]!!.latitude) {
+                    boundaryCoordinates[0] = media.coordinates!!
+                }
+                if (media.coordinates!!.latitude > boundaryCoordinates[1]!!.latitude) {
+                    boundaryCoordinates[1] = media.coordinates!!
+                }
+                if (media.coordinates!!.longitude < boundaryCoordinates[2]!!.longitude) {
+                    boundaryCoordinates[2] = media.coordinates!!
+                }
+                if (media.coordinates!!.longitude > boundaryCoordinates[3]!!.longitude) {
+                    boundaryCoordinates[3] = media.coordinates!!
+                }
+            }
+            return boundaryCoordinates
+        }
+
+        private fun updateLatestSearchRadius(
+            boundaryCoordinates: Array<LatLng>,
+            searchLatLng: LatLng,
+        ) {
+            for ((latitude, longitude) in boundaryCoordinates) {
+                val distance =
+                    calculateDistance(
+                        latitude,
+                        longitude,
+                        searchLatLng.latitude,
+                        searchLatLng.longitude,
+                    )
+                if (distance > latestSearchRadius) {
+                    latestSearchRadius = distance
+                }
+            }
         }
 
         interface NearbyBaseMarkerThumbCallback {

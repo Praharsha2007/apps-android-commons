@@ -74,7 +74,6 @@
     <ID>LongMethod:DescriptionEditActivity.kt$DescriptionEditActivity$private fun editDescription( media: Media, updatedWikiText: String, uploadMediaDetails: ArrayList&lt;UploadMediaDetail&gt;, )</ID>
     <ID>LongMethod:EditActivity.kt$EditActivity$private fun animateImageHeight()</ID>
     <ID>LongMethod:EditActivity.kt$EditActivity$private fun init()</ID>
-    <ID>LongMethod:ExploreMapController.kt$ExploreMapController$fun loadAttractionsFromLocation( currentLatLng: LatLng?, searchLatLng: LatLng?, checkingAroundCurrentLocation: Boolean, ): ExplorePlacesInfo?</ID>
     <ID>LongMethod:ExploreMapFragment.kt$ExploreMapFragment$override fun clearAllMarkers()</ID>
     <ID>LongMethod:ExploreMapFragment.kt$ExploreMapFragment$override fun onViewCreated( view: View, savedInstanceState: Bundle?, )</ID>
     <ID>LongMethod:ImageAdapter.kt$ImageAdapter$override fun onBindViewHolder( holder: ImageViewHolder, position: Int, )</ID>
